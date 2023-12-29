@@ -1,0 +1,89 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #F1F3F6;
+}
+
+.container {
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.first {
+  margin-top: 55px;
+}
+
+.fist__inner {
+  display: flex;
+  justify-content: space-between;
+}
+
+.block-1 {
+  width: 65%;
+}
+.block-1-box,
+.block-2-box,
+.block-3-box,
+.block-4-box {
+  margin-top: 5px;
+  background-color: #fff;
+  padding: 50px 35px 35px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.second, .third, .fourth {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.block-1-box {
+  display: flex;
+  justify-content: space-between;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+label[for="file_input"] {
+   margin-bottom: 40px;
+   padding: 10px;
+   background-color: #62CB31;
+   color: #fff;
+   border: none;
+   border-radius: 4px;
+   cursor: pointer;
+}
+
+.block-1-box .drag-drop-area {
+  width: 70%;
+  border: 2px dashed #ccc;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  color: gray;
+}
+
+.drag-over {
+  background-color: #f0f8ff;
+}
+
+.btn:hover {
+    background-color: #15525d!important;
+}
+.btn {
+    cursor: pointer;
+    position: relative;
+    /* padding: 14px; */
+    border: 1px solid transparent;
+    display: inline-block;
+    box-sizing: content-box;
+    vertical-align: top;
+    transition: all .4s;
+    background-color: transparent;
+    margin-bottom: 0;
+    overflow: hidden;
+}
