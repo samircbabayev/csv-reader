@@ -1,5 +1,6 @@
 <?php
 
+// Json Response
 if (!function_exists("jsonRes")) {
   function jsonRes($data){
     header('Content-Type: application/json');
@@ -18,6 +19,7 @@ if (!function_exists("jsonRes")) {
   }
 }
 
+// Rest Response
 if (!function_exists('restRes')) {
   function restRes($code = null,$message = null,$data = []){
     return [
