@@ -29,7 +29,7 @@ This is a Dockerized PHP project that allows you to download CSV with an open in
 
 After downloading csv to interface you can filter products through
 
-``` http://localhost:8000/?route=products&page=1&pageSize=100&category=health&gender=male&dob=1990-01-01&age=30&ageRangeStart=25&ageRangeEnd=30&```
+``` ?route=products&page=1&pageSize=100&category=health&gender=male&dob=1990-01-01&age=30&ageRangeStart=25&ageRangeEnd=30&```
 
 
 ```download_csv=1``` parameter allows download it to the downloads folder
