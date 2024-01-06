@@ -39,6 +39,14 @@ function downloadProducts($configs, $conn)
         file_put_contents($tempFilePath, $file);
 
         $handle = fopen($tempFilePath, 'r');
+
+        mysqli_begin_transaction($conn);
+
+        $productsDeleteSql = "DELETE FROM `products`";
+        if (!mysqli_query($conn, $productsDeleteSql)) {
+            throw new Exception("Error deleting existing data: " . mysqli_error($conn), 500);
+        }
+
         if ($handle) {
             $headers = fgetcsv($handle);
 
@@ -64,10 +72,6 @@ function downloadProducts($configs, $conn)
             }
 
             fclose($handle);
-
-            if (!empty($products)) {
-                insertBatchIntoDatabase($conn, $params['file_name'], $ext, $products);
-            }
         }
 
         return jsonRes(restRes(200, 'Success'));
@@ -83,8 +87,6 @@ function downloadProducts($configs, $conn)
 function insertBatchIntoDatabase($conn, $fileName, $fileExt, $products)
 {
     try {
-        mysqli_begin_transaction($conn);
-
         $importHistorySql = "INSERT INTO `import_history` (
                                 `file_name`,
                                 `file_ext`,
@@ -105,11 +107,6 @@ function insertBatchIntoDatabase($conn, $fileName, $fileExt, $products)
 
         foreach ($products as $key => $item) {
             $products[$key]['import_id'] = $importHistoryID;
-        }
-
-        $productsDeleteSql = "DELETE FROM `products`";
-        if (!mysqli_query($conn, $productsDeleteSql)) {
-            throw new Exception("Error deleting existing data: " . mysqli_error($conn), 500);
         }
 
         $productValues = [];
