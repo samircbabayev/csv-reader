@@ -1,23 +1,30 @@
 <?php
 
+// Include necessary files
 require_once('../app/configs.php');
 require_once('../app/functions.php');
 require_once('../app/db.php');
 
+// Define routes
 $routes = require_once('../app/routes.php');
 
+// Get the route from the URL, default to 'index'
 $route = isset($_GET['route']) ? $_GET['route'] : 'index';
 
+// Check if the route exists and the corresponding function is defined
 if (array_key_exists($route, $routes) && function_exists($routes[$route])) {
+    // Call the route function and exit
     $routes[$route]($configs, $conn);
     die;
 }
 
+// Default route function to display the dashboard
 function index($configs, $conn)
 {
     return require_once('../view/dashboard.php');
 }
 
+// Route function to download products from a CSV file
 function downloadProducts($configs, $conn)
 {
     try {
@@ -30,36 +37,41 @@ function downloadProducts($configs, $conn)
             throw new Exception('No Excel file provided', 204);
         }
 
+        // Extract file extension and decode the base64 content
         $ext = explode("data:", substr($params['file_base64'], 0, strpos($params['file_base64'], ';base64')))[1];
-
         $fileBase64 = explode("base64,", $params['file_base64'])[1];
         $file = base64_decode($fileBase64);
 
+        // Create a temporary file and write the decoded content
         $tempFilePath = tempnam(sys_get_temp_dir(), "products_temp_." . md5(uniqid()));
         file_put_contents($tempFilePath, $file);
 
-        $handle = fopen($tempFilePath, 'r');
-
         mysqli_begin_transaction($conn);
 
+        // Delete existing products data
         $productsDeleteSql = "DELETE FROM `products`";
         if (!mysqli_query($conn, $productsDeleteSql)) {
             throw new Exception("Error deleting existing data: " . mysqli_error($conn), 500);
         }
 
+        // Open the temporary file for reading
+        $handle = fopen($tempFilePath, 'r');
+
+        // Check if the file is successfully opened
         if ($handle) {
-            $headers = fgetcsv($handle);
+            $headers = fgetcsv($handle); // Get the CSV headers
 
             $products = [];
             $batchSize = 500;
 
+            // Read each row from the CSV file
             while (($row = fgetcsv($handle)) !== false) {
                 $product['import_id'] = NULL;
 
                 $product = array_merge($product, array_combine($headers, $row));
 
                 foreach ($product as $key => $value) {
-                  $product[$key] = mysqli_real_escape_string($conn, $value);
+                    $product[$key] = mysqli_real_escape_string($conn, $value);
                 }
                 $product['import_id'] = NULL;
 
@@ -76,14 +88,17 @@ function downloadProducts($configs, $conn)
 
         return jsonRes(restRes(200, 'Success'));
     } catch (Exception $e) {
+
         return jsonRes(restRes($e->getCode(), $e->getMessage()));
     } finally {
+
         if (isset($tempFilePath) && file_exists($tempFilePath)) {
             unlink($tempFilePath);
         }
     }
 }
 
+// Function to insert a batch of products into the database
 function insertBatchIntoDatabase($conn, $fileName, $fileExt, $products)
 {
     try {
@@ -105,15 +120,18 @@ function insertBatchIntoDatabase($conn, $fileName, $fileExt, $products)
 
         $importHistoryID = mysqli_insert_id($conn);
 
+        // Update each product with the import ID
         foreach ($products as $key => $item) {
             $products[$key]['import_id'] = $importHistoryID;
         }
 
+        // Create an array of SQL values for the products
         $productValues = [];
         foreach ($products as $product) {
             $productValues[] = "('" . implode("', '", $product) . "')";
         }
 
+        // Insert the batch of products into the database
         $productsInsertBatchSql = "INSERT INTO `products` (
                                   `import_id`,
                                   `category`,
@@ -130,11 +148,13 @@ function insertBatchIntoDatabase($conn, $fileName, $fileExt, $products)
 
         mysqli_commit($conn);
     } catch (Exception $e) {
+
         mysqli_rollback($conn);
         throw $e;
     }
 }
 
+// Function to fetch products with optional filters
 function products($configs, $conn)
 {
     try {
@@ -174,6 +194,7 @@ function products($configs, $conn)
             $whereClause[] = "YEAR(CURDATE()) - YEAR(`birthdate`) BETWEEN " . (int)$params['ageRangeStart'] . " AND " . (int)$params['ageRangeEnd'];
         }
 
+        // Build the WHERE condition
         $whereCondition = '';
         if (!empty($whereClause)) {
             $whereCondition = 'WHERE ' . implode(' AND ', $whereClause);
@@ -188,6 +209,7 @@ function products($configs, $conn)
         $selectQuery = "SELECT * FROM `products` $whereCondition LIMIT $offset, " . $params['pageSize'];
         $result = $conn->query($selectQuery);
 
+        // Fetch the data from the result set
         $data = [];
         while ($row = $result->fetch_assoc()) {
             $data[] = $row;
@@ -203,6 +225,7 @@ function products($configs, $conn)
             ],
         ];
 
+        // Check if CSV download is requested and data is available
         if ($params['download_csv'] === 1 && $data) {
             $csvFileName = 'downloads/products_' . date('Y-m-d_H-i-s') . '.csv';
             downloadCSV($data, $csvFileName);
@@ -210,13 +233,15 @@ function products($configs, $conn)
 
         return jsonRes($response);
     } catch (Exception $e) {
+
         return jsonRes(restRes($e->getCode(), $e->getMessage()));
     }
 }
 
+// Function to download CSV file from data array
 function downloadCSV($data, $filename = 'export.csv')
 {
-    $filePath =  __DIR__ .'/../' . $filename;
+    $filePath = __DIR__ . '/../' . $filename;
 
     $output = fopen($filePath, 'w');
 
@@ -224,11 +249,14 @@ function downloadCSV($data, $filename = 'export.csv')
         die('Failed to open file for writing');
     }
 
+    // Set headers for CSV download
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
 
+    // Write CSV headers
     fputcsv($output, array_keys($data[0]));
 
+    // Write each row in the CSV file
     foreach ($data as $row) {
         array_walk($row, function (&$value) {
             $value = str_replace('"', '""', $value);
